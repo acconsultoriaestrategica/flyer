@@ -3,21 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu PDF Slider</title>
+    <title>AC Consultoria - Flyer Interativo</title>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    
     <style>
-        body { margin: 0; background: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        .swiper { width: 100%; height: 90vh; }
-        .swiper-slide { display: flex; justify-content: center; align-items: center; }
-        canvas { max-width: 100%; max-height: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .swiper-button-next, .swiper-button-prev { color: #fff; }
+        body { 
+            margin: 0; 
+            background: #000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        .swiper { 
+            width: 100%; 
+            height: 100vh; 
+        }
+
+        .swiper-slide { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+            max-height: 100vh;
+        }
+
+        canvas { 
+            display: block;
+            max-width: 100%; 
+            max-height: 100vh; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+        }
+
+        /* --- ÁREA DO BOTÃO COM AJUSTE PARA BAIXO --- */
+        .btn-link {
+            position: absolute;
+            
+            /* BAIXAMOS PARA 28.5% (estava 29.5%) */
+            bottom: 28.5%; 
+            left: 50%;
+            transform: translateX(-50%);
+            
+            /* LARGURA E ALTURA EXPANDIDAS */
+            width: 82%;    
+            height: 9%;    /* Aumentamos para 9% para cobrir a base */
+            
+            z-index: 999;
+            cursor: pointer;
+            border-radius: 4px;
+            
+            -webkit-tap-highlight-color: transparent; 
+
+            /* ANIMAÇÃO DE BRILHO */
+            animation: pulse-gold 2s infinite;
+        }
+
+        @keyframes pulse-gold {
+            0% {
+                background: rgba(243, 156, 18, 0.02);
+                box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.3);
+            }
+            50% {
+                background: rgba(243, 156, 18, 0.15);
+                box-shadow: 0 0 25px 8px rgba(243, 156, 18, 0.25);
+            }
+            100% {
+                background: rgba(243, 156, 18, 0.02);
+                box-shadow: 0 0 0 0 rgba(243, 156, 18, 0);
+            }
+        }
+
+        .btn-link:active {
+            background: rgba(243, 156, 18, 0.5) !important;
+            transition: 0.1s;
+        }
+
+        .swiper-button-next, .swiper-button-prev { color: #f39c12; }
+        .swiper-pagination-bullet-active { background: #f39c12; }
     </style>
 </head>
 <body>
 
 <div class="swiper">
-    <div class="swiper-wrapper" id="pdf-wrapper">
-        </div>
+    <div class="swiper-wrapper" id="pdf-wrapper"></div>
     <div class="swiper-button-next"></div>
     <div class="swiper-button-prev"></div>
     <div class="swiper-pagination"></div>
@@ -27,25 +104,41 @@
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
 <script>
-    // 1. NOME DO SEU ARQUIVO PDF AQUI:
-    const url = 'FLYER INTERATIVO (1080 x 1920 px) CLICK.pdf'; 
+    const pdfUrl = 'FLYER INTERATIVO (1080 x 1920 px) CLICK.pdf'; 
+    const numeroWhats = "5521987524287";
+    const textoWhats = encodeURIComponent("Olá! Vi o flyer da AC Consultoria e quero falar com o consultor agora.");
+    const linkCompleto = `https://wa.me/${numeroWhats}?text=${textoWhats}`;
 
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
     const wrapper = document.getElementById('pdf-wrapper');
 
-    // Carregar o PDF
-    pdfjsLib.getDocument(url).promise.then(pdf => {
-        for (let i = 1; i <= pdf.numPages; i++) {
+    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+        const totalPages = pdf.numPages;
+
+        for (let i = 1; i <= totalPages; i++) {
             const slide = document.createElement('div');
             slide.className = 'swiper-slide';
+
+            const container = document.createElement('div');
+            container.className = 'canvas-container';
+
+            if (i === totalPages) {
+                const link = document.createElement('a');
+                link.className = 'btn-link';
+                link.href = linkCompleto;
+                link.target = '_blank';
+                container.appendChild(link);
+            }
+
             const canvas = document.createElement('canvas');
-            slide.appendChild(canvas);
+            container.appendChild(canvas);
+            slide.appendChild(container);
             wrapper.appendChild(slide);
 
             pdf.getPage(i).then(page => {
-                const viewport = page.getViewport({ scale: 1.5 });
+                const viewport = page.getViewport({ scale: 2.0 });
                 const context = canvas.getContext('2d');
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
@@ -53,16 +146,15 @@
             });
         }
 
-        // Iniciar o Swiper depois de carregar as páginas
         setTimeout(() => {
             new Swiper('.swiper', {
                 navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
                 pagination: { el: '.swiper-pagination', clickable: true },
-                slidesPerView: 1, // SÓ UMA PÁGINA POR VEZ (Seu pedido!)
-                centeredSlides: true,
+                speed: 600
             });
-        }, 500);
+        }, 1000);
     });
 </script>
+
 </body>
 </html>
